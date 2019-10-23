@@ -63,7 +63,7 @@ func ListenCtx(ctx context.Context, network, address string) (*Listener, error) 
 	return &Listener{Listener: nl, fd: fd}, nil
 }
 
-func Listen(network, address string) (net.Listener, error) {
+func Listen(network, address string) (*Listener, error) {
 	return ListenCtx(context.Background(), network, address)
 }
 
@@ -105,7 +105,7 @@ func ListenPacketCtx(ctx context.Context, network, address string) (*PacketConn,
 	return &PacketConn{PacketConn: pl, fd: fd}, nil
 }
 
-func ListenPacket(network, address string) (net.PacketConn, error) {
+func ListenPacket(network, address string) (*PacketConn, error) {
 	return ListenPacketCtx(context.Background(), network, address)
 }
 
