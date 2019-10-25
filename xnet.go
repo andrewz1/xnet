@@ -137,10 +137,10 @@ func DialCtx(ctx context.Context, network, address string) (*Conn, error) {
 	return xdial(ctx, time.Duration(0), network, address)
 }
 
-func Dial(network, address string) (net.Conn, error) {
+func Dial(network, address string) (*Conn, error) {
 	return xdial(context.Background(), time.Duration(0), network, address)
 }
 
-func DialTimeout(network, address string, timeout time.Duration) (net.Conn, error) {
+func DialTimeout(network, address string, timeout time.Duration) (*Conn, error) {
 	return xdial(context.Background(), timeout, network, address)
 }
