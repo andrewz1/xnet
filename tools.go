@@ -10,6 +10,13 @@ type haveFD interface {
 	GetFD() int
 }
 
+func haveLingerCall(v interface{}) setLingerIf {
+	if l, ok := v.(setLingerIf); ok {
+		return l
+	}
+	return nil
+}
+
 func getSyscallConn(c interface{}) syscall.RawConn {
 	v, ok := c.(syscall.Conn)
 	if !ok {
@@ -23,11 +30,9 @@ func getSyscallConn(c interface{}) syscall.RawConn {
 }
 
 func setLinger(c interface{}) {
-	v, ok := c.(setLingerIf)
-	if !ok {
-		return
+	if v := haveLingerCall(c); v != nil {
+		v.SetLinger(0)
 	}
-	v.SetLinger(0)
 }
 
 func GetFD(c interface{}) int {
