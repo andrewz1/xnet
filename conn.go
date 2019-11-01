@@ -3,7 +3,6 @@ package xnet
 import (
 	"net"
 	"sync"
-	"syscall"
 )
 
 type Conn struct {
@@ -19,10 +18,10 @@ func (c *Conn) Close() error {
 	if c.closed {
 		return nil
 	}
-	if c.fd != unknownFD {
-		syscall.Shutdown(c.fd, syscall.SHUT_RDWR)
-		c.fd = unknownFD
-	}
+	//if c.fd != unknownFD {
+	//	syscall.Shutdown(c.fd, syscall.SHUT_RDWR)
+	//	c.fd = unknownFD
+	//}
 	if err := c.Conn.Close(); err != nil {
 		return err
 	}
