@@ -3,3 +3,4 @@
 vendor/
 Gopkg.lock
 go.sum
+gc.sh

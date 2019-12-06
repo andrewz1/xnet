@@ -13,21 +13,23 @@ type PacketConn struct {
 	fd     int
 }
 
-func (pc *PacketConn) Close() error {
+func (pc *PacketConn) Close() (err error) {
 	pc.Lock()
-	defer pc.Unlock()
 	if pc.closed {
-		return nil
+		pc.Unlock()
+		return
 	}
 	if pc.fd != unknownFD {
 		syscall.Shutdown(pc.fd, syscall.SHUT_RDWR)
 		pc.fd = unknownFD
 	}
-	if err := pc.PacketConn.Close(); err != nil {
-		return err
+	if err = pc.PacketConn.Close(); err != nil {
+		pc.Unlock()
+		return
 	}
 	pc.closed = true
-	return nil
+	pc.Unlock()
+	return
 }
 
 func (pc *PacketConn) GetFD() (fd int) {

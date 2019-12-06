@@ -22,11 +22,10 @@ func getSyscallConn(c interface{}) syscall.RawConn {
 	if !ok {
 		return nil
 	}
-	rc, err := v.SyscallConn()
-	if err != nil {
-		return nil
+	if rc, err := v.SyscallConn(); err == nil {
+		return rc
 	}
-	return rc
+	return nil
 }
 
 func setLinger(c interface{}) {
@@ -36,11 +35,10 @@ func setLinger(c interface{}) {
 }
 
 func GetFD(c interface{}) int {
-	v, ok := c.(haveFD)
-	if !ok {
-		return unknownFD
+	if v, ok := c.(haveFD); ok {
+		return v.GetFD()
 	}
-	return v.GetFD()
+	return unknownFD
 }
 
 func HaveFD(c interface{}) bool {

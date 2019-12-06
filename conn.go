@@ -13,21 +13,23 @@ type Conn struct {
 	fd     int
 }
 
-func (c *Conn) Close() error {
+func (c *Conn) Close() (err error) {
 	c.Lock()
-	defer c.Unlock()
 	if c.closed {
-		return nil
+		c.Unlock()
+		return
 	}
 	if c.fd != unknownFD {
 		_ = syscall.Shutdown(c.fd, syscall.SHUT_RDWR)
 		c.fd = unknownFD
 	}
-	if err := c.Conn.Close(); err != nil {
-		return err
+	if err = c.Conn.Close(); err != nil {
+		c.Unlock()
+		return
 	}
 	c.closed = true
-	return nil
+	c.Unlock()
+	return
 }
 
 func (c *Conn) GetFD() (fd int) {

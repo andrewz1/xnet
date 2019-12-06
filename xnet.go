@@ -11,18 +11,19 @@ import (
 
 const unknownFD int = -1
 
-func setReuse(fd int) error {
-	if err := syscall.SetsockoptInt(fd, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1); err != nil {
-		return err
+func setReuse(fd int) (err error) {
+	if err = syscall.SetsockoptInt(fd, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1); err != nil {
+		return
 	}
-	if err := syscall.SetsockoptInt(fd, syscall.SOL_SOCKET, unix.SO_REUSEPORT, 1); err != nil {
-		return err
+	if err = syscall.SetsockoptInt(fd, syscall.SOL_SOCKET, unix.SO_REUSEPORT, 1); err != nil {
+		return
 	}
-	return nil
+	return
 }
 
-func setNoDelay(fd int) error {
-	return syscall.SetsockoptInt(fd, syscall.IPPROTO_TCP, syscall.TCP_NODELAY, 1)
+func setNoDelay(fd int) (err error) {
+	err = syscall.SetsockoptInt(fd, syscall.IPPROTO_TCP, syscall.TCP_NODELAY, 1)
+	return
 }
 
 func ListenCtx(ctx context.Context, network, address string) (*Listener, error) {

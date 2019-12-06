@@ -13,42 +13,55 @@ type Listener struct {
 	fd     int
 }
 
-func (l *Listener) Close() error {
+func (l *Listener) Close() (err error) {
 	l.Lock()
-	defer l.Unlock()
 	if l.closed {
-		return nil
+		l.Unlock()
+		return
 	}
 	if l.fd != unknownFD {
-		syscall.Shutdown(l.fd, syscall.SHUT_RDWR)
+		_ = syscall.Shutdown(l.fd, syscall.SHUT_RDWR)
 		l.fd = unknownFD
 	}
-	if err := l.Listener.Close(); err != nil {
-		return err
+	if err = l.Listener.Close(); err != nil {
+		l.Unlock()
+		return
 	}
 	l.closed = true
-	return nil
+	l.Unlock()
+	return
 }
 
-func (l *Listener) Accept() (net.Conn, error) {
-	nc, err := l.Listener.Accept()
-	if err != nil {
-		return nil, err
+func (l *Listener) AcceptXConn() (xc *Conn, err error) {
+	var (
+		nc net.Conn
+		rc syscall.RawConn
+	)
+
+	if nc, err = l.Listener.Accept(); err != nil {
+		return
 	}
 	setLinger(nc)
-	xc := &Conn{Conn: nc, fd: unknownFD}
-	rc := getSyscallConn(nc)
-	if rc == nil {
-		return xc, nil
+	xc = &Conn{
+		Conn: nc,
+		fd:   unknownFD,
+	}
+	if rc = getSyscallConn(nc); rc == nil {
+		return
 	}
 	err = rc.Control(func(pfd uintptr) {
 		xc.fd = int(pfd)
 	})
 	if err != nil {
 		xc.Close()
-		return nil, err
+		xc = nil
+		return
 	}
-	return xc, nil
+	return
+}
+
+func (l *Listener) Accept() (net.Conn, error) {
+	return l.AcceptXConn()
 }
 
 func (l *Listener) GetFD() (fd int) {
