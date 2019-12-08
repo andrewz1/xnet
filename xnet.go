@@ -29,20 +29,20 @@ func setNoDelay(fd int) (err error) {
 func ListenCtx(ctx context.Context, network, address string) (*Listener, error) {
 	fd := unknownFD
 	lc := &net.ListenConfig{
-		Control: func(network, address string, rc syscall.RawConn) error {
-			if rc != nil {
-				err := rc.Control(func(pfd uintptr) {
+		Control: func(network, address string, rc syscall.RawConn) (ee error) {
+			if rc != nil && rc.Control != nil {
+				ee = rc.Control(func(pfd uintptr) {
 					fd = int(pfd)
 				})
-				if err != nil {
-					return err
+				if ee != nil {
+					return nil
 				}
 			}
 			if fd == unknownFD {
 				return nil
 			}
-			if err := setReuse(fd); err != nil {
-				return err
+			if ee = setReuse(fd); ee != nil {
+				return
 			}
 			switch network {
 			case "tcp":
@@ -51,8 +51,8 @@ func ListenCtx(ctx context.Context, network, address string) (*Listener, error) 
 			default:
 				return nil
 			}
-			if err := setNoDelay(fd); err != nil {
-				return err
+			if ee = setNoDelay(fd); ee != nil {
+				return ee
 			}
 			return nil
 		},
@@ -71,20 +71,20 @@ func Listen(network, address string) (*Listener, error) {
 func ListenPacketCtx(ctx context.Context, network, address string) (*PacketConn, error) {
 	fd := unknownFD
 	lc := &net.ListenConfig{
-		Control: func(network, address string, rc syscall.RawConn) error {
-			if rc != nil {
-				err := rc.Control(func(pfd uintptr) {
+		Control: func(network, address string, rc syscall.RawConn) (ee error) {
+			if rc != nil && rc.Control != nil {
+				ee = rc.Control(func(pfd uintptr) {
 					fd = int(pfd)
 				})
-				if err != nil {
-					return err
+				if ee != nil {
+					return nil
 				}
 			}
 			if fd == unknownFD {
 				return nil
 			}
-			if err := setReuse(fd); err != nil {
-				return err
+			if ee = setReuse(fd); ee != nil {
+				return
 			}
 			switch network {
 			case "tcp":
@@ -93,8 +93,8 @@ func ListenPacketCtx(ctx context.Context, network, address string) (*PacketConn,
 			default:
 				return nil
 			}
-			if err := setNoDelay(fd); err != nil {
-				return err
+			if ee = setNoDelay(fd); ee != nil {
+				return
 			}
 			return nil
 		},
@@ -114,13 +114,13 @@ func xdial(ctx context.Context, tmo time.Duration, network, address string) (*Co
 	fd := unknownFD
 	dl := &net.Dialer{
 		Timeout: tmo,
-		Control: func(network, address string, rc syscall.RawConn) error {
-			if rc != nil {
-				err := rc.Control(func(pfd uintptr) {
+		Control: func(network, address string, rc syscall.RawConn) (ee error) {
+			if rc != nil && rc.Control != nil {
+				ee = rc.Control(func(pfd uintptr) {
 					fd = int(pfd)
 				})
-				if err != nil {
-					return err
+				if ee != nil {
+					return nil
 				}
 			}
 			return nil

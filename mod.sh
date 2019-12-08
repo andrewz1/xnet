@@ -5,4 +5,4 @@ go generate
 go mod init
 go mod tidy
 go get -u ./...
-sed -i '/\/\/ indirect$/d' go.mod
+#sed -i '/\/\/ indirect$/d' go.mod
