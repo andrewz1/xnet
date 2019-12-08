@@ -32,7 +32,7 @@ func (l *Listener) Close() (err error) {
 	return
 }
 
-func (l *Listener) AcceptXConn() (xc *Conn, err error) {
+func (l *Listener) xAccept() (xc *Conn, err error) {
 	var (
 		nc net.Conn
 		rc syscall.RawConn
@@ -61,7 +61,7 @@ func (l *Listener) AcceptXConn() (xc *Conn, err error) {
 }
 
 func (l *Listener) Accept() (net.Conn, error) {
-	return l.AcceptXConn()
+	return l.xAccept()
 }
 
 func (l *Listener) GetFD() (fd int) {
