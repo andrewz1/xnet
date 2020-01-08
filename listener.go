@@ -8,37 +8,34 @@ import (
 
 type Listener struct {
 	net.Listener
-	sync.Mutex
+	sync.RWMutex
 	closed bool
 	fd     int
 }
 
-func (l *Listener) Close() (err error) {
-	l.Lock()
-	if l.closed {
-		l.Unlock()
-		return
+func (ls *Listener) Close() error {
+	ls.Lock()
+	if ls.closed {
+		ls.Unlock()
+		return nil
 	}
-	if l.fd != unknownFD {
-		_ = syscall.Shutdown(l.fd, syscall.SHUT_RDWR)
-		l.fd = unknownFD
+	fd := ls.fd
+	ls.closed = true
+	ls.fd = unknownFD
+	ls.Unlock()
+	if fd != unknownFD {
+		syscall.Shutdown(fd, syscall.SHUT_RDWR)
 	}
-	if err = l.Listener.Close(); err != nil {
-		l.Unlock()
-		return
-	}
-	l.closed = true
-	l.Unlock()
-	return
+	return ls.Listener.Close()
 }
 
-func (l *Listener) xAccept() (xc *Conn, err error) {
+func (ls *Listener) AcceptXConn() (xc *Conn, err error) {
 	var (
 		nc net.Conn
 		rc syscall.RawConn
 	)
 
-	if nc, err = l.Listener.Accept(); err != nil {
+	if nc, err = ls.Listener.Accept(); err != nil {
 		return
 	}
 	setLinger(nc)
@@ -60,13 +57,20 @@ func (l *Listener) xAccept() (xc *Conn, err error) {
 	return
 }
 
-func (l *Listener) Accept() (net.Conn, error) {
-	return l.xAccept()
+func (ls *Listener) Accept() (net.Conn, error) {
+	return ls.AcceptXConn()
 }
 
-func (l *Listener) GetFD() (fd int) {
-	l.Lock()
-	fd = l.fd
-	l.Unlock()
+func (ls *Listener) GetFD() (fd int) {
+	ls.RLock()
+	fd = ls.fd
+	ls.RUnlock()
+	return
+}
+
+func (ls *Listener) IsClosed() (rv bool) {
+	ls.RLock()
+	rv = ls.closed
+	ls.RUnlock()
 	return
 }

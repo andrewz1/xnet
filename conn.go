@@ -8,33 +8,37 @@ import (
 
 type Conn struct {
 	net.Conn
-	sync.Mutex
+	sync.RWMutex
 	closed bool
 	fd     int
 }
 
-func (c *Conn) Close() (err error) {
-	c.Lock()
-	if c.closed {
-		c.Unlock()
-		return
+func (cn *Conn) Close() error {
+	cn.Lock()
+	if cn.closed {
+		cn.Unlock()
+		return nil
 	}
-	if c.fd != unknownFD {
-		_ = syscall.Shutdown(c.fd, syscall.SHUT_RDWR)
-		c.fd = unknownFD
+	fd := cn.fd
+	cn.closed = true
+	cn.fd = unknownFD
+	cn.Unlock()
+	if fd != unknownFD {
+		syscall.Shutdown(fd, syscall.SHUT_RDWR)
 	}
-	if err = c.Conn.Close(); err != nil {
-		c.Unlock()
-		return
-	}
-	c.closed = true
-	c.Unlock()
+	return cn.Conn.Close()
+}
+
+func (cn *Conn) GetFD() (fd int) {
+	cn.RLock()
+	fd = cn.fd
+	cn.RUnlock()
 	return
 }
 
-func (c *Conn) GetFD() (fd int) {
-	c.Lock()
-	fd = c.fd
-	c.Unlock()
+func (cn *Conn) IsClosed() (rv bool) {
+	cn.RLock()
+	rv = cn.closed
+	cn.RUnlock()
 	return
 }

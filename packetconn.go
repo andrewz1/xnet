@@ -8,33 +8,37 @@ import (
 
 type PacketConn struct {
 	net.PacketConn
-	sync.Mutex
+	sync.RWMutex
 	closed bool
 	fd     int
 }
 
-func (pc *PacketConn) Close() (err error) {
+func (pc *PacketConn) Close() error {
 	pc.Lock()
 	if pc.closed {
 		pc.Unlock()
-		return
+		return nil
 	}
-	if pc.fd != unknownFD {
-		syscall.Shutdown(pc.fd, syscall.SHUT_RDWR)
-		pc.fd = unknownFD
-	}
-	if err = pc.PacketConn.Close(); err != nil {
-		pc.Unlock()
-		return
-	}
+	fd := pc.fd
 	pc.closed = true
+	pc.fd = unknownFD
 	pc.Unlock()
-	return
+	if fd != unknownFD {
+		syscall.Shutdown(fd, syscall.SHUT_RDWR)
+	}
+	return pc.PacketConn.Close()
 }
 
 func (pc *PacketConn) GetFD() (fd int) {
-	pc.Lock()
+	pc.RLock()
 	fd = pc.fd
-	pc.Unlock()
+	pc.RUnlock()
+	return
+}
+
+func (pc *PacketConn) IsClosed() (rv bool) {
+	pc.RLock()
+	rv = pc.closed
+	pc.RUnlock()
 	return
 }
