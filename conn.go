@@ -4,6 +4,7 @@ import (
 	"net"
 	"sync"
 	"syscall"
+	"time"
 )
 
 type Conn struct {
@@ -41,4 +42,18 @@ func (cn *Conn) IsClosed() (rv bool) {
 	rv = cn.closed
 	cn.RUnlock()
 	return
+}
+
+func (cn *Conn) SetKeepAlive(keepalive bool) error {
+	if sk, ok := cn.Conn.(interface{ SetKeepAlive(bool) error }); ok {
+		return sk.SetKeepAlive(keepalive)
+	}
+	return nil
+}
+
+func (cn *Conn) SetKeepAlivePeriod(d time.Duration) error {
+	if sk, ok := cn.Conn.(interface{ SetKeepAlivePeriod(time.Duration) error }); ok {
+		return sk.SetKeepAlivePeriod(d)
+	}
+	return nil
 }
