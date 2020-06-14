@@ -56,11 +56,15 @@ func (r *rawConn) setNoDelay(network string) (err error) {
 	return
 }
 
+func setProxyFd(fd int) error {
+	return syscall.SetsockoptInt(fd, syscall.SOL_IP, syscall.IP_TRANSPARENT, 1)
+}
+
 func (r *rawConn) setProxy() (err error) {
 	if !r.isOk() {
 		return
 	}
-	err = syscall.SetsockoptInt(r.fd, syscall.SOL_IP, syscall.IP_TRANSPARENT, 1)
+	err = setProxyFd(r.fd)
 	return
 }
 

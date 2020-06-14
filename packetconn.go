@@ -11,6 +11,7 @@ type PacketConn struct {
 	sync.RWMutex
 	closed bool
 	fd     int
+	proxy  bool
 }
 
 func (pc *PacketConn) Close() error {

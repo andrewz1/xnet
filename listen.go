@@ -80,6 +80,7 @@ func ListenProxyCtx(ctx context.Context, network, address string) (xl *Listener,
 	xl = &Listener{
 		Listener: nl,
 		fd:       r.fd,
+		proxy:    true,
 	}
 	return
 }
@@ -100,6 +101,7 @@ func ListenPacketProxyCtx(ctx context.Context, network, address string) (xl *Pac
 	xl = &PacketConn{
 		PacketConn: pl,
 		fd:         r.fd,
+		proxy:      true,
 	}
 	return
 }
