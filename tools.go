@@ -2,25 +2,14 @@ package xnet
 
 import "syscall"
 
-type setLingerIf interface {
-	SetLinger(sec int) error
-}
-
-type haveFD interface {
-	GetFD() int
-}
-
-func haveLingerCall(v interface{}) setLingerIf {
-	if l, ok := v.(setLingerIf); ok {
-		return l
-	}
-	return nil
-}
-
 func getSyscallConn(c interface{}) syscall.RawConn {
-	v, ok := c.(syscall.Conn)
-	if !ok {
+	var (
+		v  syscall.Conn
+		ok bool
+	)
+	if v, ok = c.(syscall.Conn); !ok || v == nil {
 		return nil
+
 	}
 	if rc, err := v.SyscallConn(); err == nil {
 		return rc
@@ -29,19 +18,19 @@ func getSyscallConn(c interface{}) syscall.RawConn {
 }
 
 func setLinger(c interface{}) {
-	if v := haveLingerCall(c); v != nil {
+	if v, ok := c.(interface{ SetLinger(int) error }); ok && v != nil {
 		v.SetLinger(0)
 	}
 }
 
 func GetFD(c interface{}) int {
-	if v, ok := c.(haveFD); ok {
+	if v, ok := c.(interface{ GetFD() int }); ok && v != nil {
 		return v.GetFD()
 	}
 	return unknownFD
 }
 
 func HaveFD(c interface{}) bool {
-	_, ok := c.(haveFD)
-	return ok
+	v, ok := c.(interface{ GetFD() int })
+	return ok && v != nil
 }

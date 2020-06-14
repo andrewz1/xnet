@@ -2,7 +2,6 @@ package xnet
 
 import (
 	"net"
-	"syscall"
 	"testing"
 )
 
@@ -27,13 +26,9 @@ func TestInterface(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Dial: %s", err)
 	}
-	v, ok := c.(syscall.Conn)
-	if !ok {
-		t.Fatalf("Interface convart fail")
-	}
-	rc, err := v.SyscallConn()
-	if err != nil {
-		t.Fatalf("SyscallConn: %s", err)
+	rc := getSyscallConn(c)
+	if rc == nil {
+		t.Fatalf("getSyscallConn error")
 	}
 	t.Logf("%T", rc)
 }

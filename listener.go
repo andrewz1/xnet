@@ -46,10 +46,7 @@ func (ls *Listener) AcceptXConn() (xc *Conn, err error) {
 	if rc = getSyscallConn(nc); rc == nil {
 		return
 	}
-	err = rc.Control(func(pfd uintptr) {
-		xc.fd = int(pfd)
-	})
-	if err != nil {
+	if err = rc.Control(func(pfd uintptr) { xc.fd = int(pfd) }); err != nil {
 		xc.Close()
 		xc = nil
 		return

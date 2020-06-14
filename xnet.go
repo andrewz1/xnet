@@ -21,8 +21,16 @@ func newRawConn() *rawConn {
 	}
 }
 
+func (r *rawConn) isInit() bool {
+	return r != nil
+}
+
+func (r *rawConn) isOk() bool {
+	return r.isInit() && r.fd >= 0
+}
+
 func (r *rawConn) setReuse() (err error) {
-	if r == nil {
+	if !r.isOk() {
 		return
 	}
 	if err = syscall.SetsockoptInt(r.fd, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1); err != nil {
@@ -35,22 +43,34 @@ func (r *rawConn) setReuse() (err error) {
 }
 
 func (r *rawConn) setNoDelay() (err error) {
-	if r == nil {
+	if !r.isOk() {
 		return
 	}
 	err = syscall.SetsockoptInt(r.fd, syscall.IPPROTO_TCP, syscall.TCP_NODELAY, 1)
 	return
 }
 
-func (r *rawConn) ctrl(network, address string, rc syscall.RawConn) (err error) {
-	if r == nil || rc == nil {
+func (r *rawConn) ctrlBase(rc syscall.RawConn) (ok bool, err error) {
+	if !r.isInit() || rc == nil {
 		return
 	}
 	if err = rc.Control(func(pfd uintptr) { r.fd = int(pfd) }); err != nil {
 		return
 	}
 	if r.fd == unknownFD {
-		return nil
+		return
+	}
+	ok = true
+	return
+}
+
+func (r *rawConn) ctrlListen(network, address string, rc syscall.RawConn) (err error) {
+	var ok bool
+	if ok, err = r.ctrlBase(rc); err != nil {
+		return
+	}
+	if !ok {
+		return
 	}
 	if err = r.setReuse(); err != nil {
 		return
@@ -68,20 +88,15 @@ func (r *rawConn) ctrl(network, address string, rc syscall.RawConn) (err error) 
 	return
 }
 
-func (r *rawConn) dctrl(network, address string, rc syscall.RawConn) (err error) {
-	if r == nil || rc == nil {
-		return
-	}
-	if err = rc.Control(func(pfd uintptr) { r.fd = int(pfd) }); err != nil {
-		return
-	}
+func (r *rawConn) ctrlDial(network, address string, rc syscall.RawConn) (err error) {
+	_, err = r.ctrlBase(rc)
 	return
 }
 
 func ListenCtx(ctx context.Context, network, address string) (xl *Listener, err error) {
 	r := newRawConn()
 	lc := &net.ListenConfig{
-		Control: r.ctrl,
+		Control: r.ctrlListen,
 	}
 	var nl net.Listener
 	if nl, err = lc.Listen(ctx, network, address); err != nil {
@@ -101,7 +116,7 @@ func Listen(network, address string) (*Listener, error) {
 func ListenPacketCtx(ctx context.Context, network, address string) (xl *PacketConn, err error) {
 	r := newRawConn()
 	lc := &net.ListenConfig{
-		Control: r.ctrl,
+		Control: r.ctrlListen,
 	}
 	var pl net.PacketConn
 	if pl, err = lc.ListenPacket(ctx, network, address); err != nil {
@@ -122,7 +137,7 @@ func xdial(ctx context.Context, tmo time.Duration, network, address string) (xc 
 	r := newRawConn()
 	dl := &net.Dialer{
 		Timeout: tmo,
-		Control: r.dctrl,
+		Control: r.ctrlDial,
 	}
 	var nc net.Conn
 	if nc, err = dl.DialContext(ctx, network, address); err != nil {
