@@ -1,6 +1,5 @@
-.vscode/
-.idea/
-vendor/
-Gopkg.lock
+/.vscode/
+/.idea/
+/vendor/
+
 go.sum
-gc.sh

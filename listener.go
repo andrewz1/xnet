@@ -11,7 +11,6 @@ type Listener struct {
 	sync.RWMutex
 	closed bool
 	fd     int
-	proxy  bool
 }
 
 func (ls *Listener) Close() error {
@@ -54,13 +53,6 @@ func (ls *Listener) AcceptXConn() (xc *Conn, err error) {
 	}
 	if xc.fd < 0 {
 		return
-	}
-	if ls.proxy {
-		if err = setProxyFd(xc.fd); err != nil {
-			xc.Close()
-			xc = nil
-			return
-		}
 	}
 	return
 }

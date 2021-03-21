@@ -26,7 +26,7 @@ func makeLocalAddr(network, laStr string) (la net.Addr) {
 }
 
 func xdial(ctx context.Context, tmo time.Duration, network, la, address string) (xc *Conn, err error) {
-	r := newRawConn(false)
+	r := newRawConn()
 	dl := &net.Dialer{
 		Timeout:   tmo,
 		LocalAddr: makeLocalAddr(network, la),

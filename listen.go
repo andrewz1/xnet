@@ -17,11 +17,6 @@ func (r *rawConn) ctrlListen(network, address string, rc syscall.RawConn) (err e
 	if err = r.setReuse(); err != nil {
 		return
 	}
-	if r.proxy {
-		if err = r.setProxy(); err != nil {
-			return
-		}
-	}
 	if err = r.setNoDelay(network); err != nil {
 		return
 	}
@@ -29,7 +24,7 @@ func (r *rawConn) ctrlListen(network, address string, rc syscall.RawConn) (err e
 }
 
 func ListenCtx(ctx context.Context, network, address string) (xl *Listener, err error) {
-	r := newRawConn(false)
+	r := newRawConn()
 	lc := &net.ListenConfig{
 		Control: r.ctrlListen,
 	}
@@ -49,7 +44,7 @@ func Listen(network, address string) (*Listener, error) {
 }
 
 func ListenPacketCtx(ctx context.Context, network, address string) (xl *PacketConn, err error) {
-	r := newRawConn(false)
+	r := newRawConn()
 	lc := &net.ListenConfig{
 		Control: r.ctrlListen,
 	}
@@ -66,46 +61,4 @@ func ListenPacketCtx(ctx context.Context, network, address string) (xl *PacketCo
 
 func ListenPacket(network, address string) (*PacketConn, error) {
 	return ListenPacketCtx(context.Background(), network, address)
-}
-
-func ListenProxyCtx(ctx context.Context, network, address string) (xl *Listener, err error) {
-	r := newRawConn(true)
-	lc := &net.ListenConfig{
-		Control: r.ctrlListen,
-	}
-	var nl net.Listener
-	if nl, err = lc.Listen(ctx, network, address); err != nil {
-		return
-	}
-	xl = &Listener{
-		Listener: nl,
-		fd:       r.fd,
-		proxy:    true,
-	}
-	return
-}
-
-func ListenProxy(network, address string) (*Listener, error) {
-	return ListenProxyCtx(context.Background(), network, address)
-}
-
-func ListenPacketProxyCtx(ctx context.Context, network, address string) (xl *PacketConn, err error) {
-	r := newRawConn(true)
-	lc := &net.ListenConfig{
-		Control: r.ctrlListen,
-	}
-	var pl net.PacketConn
-	if pl, err = lc.ListenPacket(ctx, network, address); err != nil {
-		return
-	}
-	xl = &PacketConn{
-		PacketConn: pl,
-		fd:         r.fd,
-		proxy:      true,
-	}
-	return
-}
-
-func ListenPacketProxy(network, address string) (*PacketConn, error) {
-	return ListenPacketProxyCtx(context.Background(), network, address)
 }
