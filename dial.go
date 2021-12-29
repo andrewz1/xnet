@@ -3,67 +3,56 @@ package xnet
 import (
 	"context"
 	"net"
-	"syscall"
 	"time"
 )
 
-func (r *rawConn) ctrlDial(network, address string, rc syscall.RawConn) (err error) {
-	_, err = r.ctrlBase(rc)
-	return
-}
-
-func makeLocalAddr(network, laStr string) (la net.Addr) {
-	if len(network) < 3 {
-		return
+func newDialer(laddr net.Addr, tmo time.Duration) *net.Dialer {
+	return &net.Dialer{
+		Timeout:       tmo,
+		LocalAddr:     laddr,
+		FallbackDelay: 100 * time.Millisecond,
+		KeepAlive:     10 * time.Second,
 	}
-	switch network[0:3] {
-	case "udp":
-		la, _ = net.ResolveUDPAddr(network, laStr)
-	case "tcp":
-		la, _ = net.ResolveTCPAddr(network, laStr)
+}
+
+func DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	switch network {
+	case "tcp", "tcp4", "tcp6":
+		ra, err := net.ResolveTCPAddr(network, address)
+		if err != nil {
+			return nil, err
+		}
+		return DialTCPContext(ctx, network, &net.TCPAddr{}, ra)
+	case "udp", "udp4", "udp6":
+		ra, err := net.ResolveUDPAddr(network, address)
+		if err != nil {
+			return nil, err
+		}
+		return DialUDPContext(ctx, network, &net.UDPAddr{}, ra)
+	default:
+		return nil, net.UnknownNetworkError(network)
 	}
-	return
 }
 
-func xdial(ctx context.Context, tmo time.Duration, network, la, address string) (xc *Conn, err error) {
-	r := newRawConn()
-	dl := &net.Dialer{
-		Timeout:   tmo,
-		LocalAddr: makeLocalAddr(network, la),
-		Control:   r.ctrlDial,
+func DialTimeout(network, address string, tmo time.Duration) (net.Conn, error) {
+	switch network {
+	case "tcp", "tcp4", "tcp6":
+		ra, err := net.ResolveTCPAddr(network, address)
+		if err != nil {
+			return nil, err
+		}
+		return DialTCPTimeout(network, &net.TCPAddr{}, ra, tmo)
+	case "udp", "udp4", "udp6":
+		ra, err := net.ResolveUDPAddr(network, address)
+		if err != nil {
+			return nil, err
+		}
+		return DialUDPTimeout(network, &net.UDPAddr{}, ra, tmo)
+	default:
+		return nil, net.UnknownNetworkError(network)
 	}
-	var nc net.Conn
-	if nc, err = dl.DialContext(ctx, network, address); err != nil {
-		return
-	}
-	setLinger(nc)
-	xc = &Conn{
-		Conn: nc,
-		fd:   r.fd,
-	}
-	return
 }
 
-func DialCtx(ctx context.Context, network, address string) (*Conn, error) {
-	return xdial(ctx, time.Duration(0), network, "", address)
-}
-
-func Dial(network, address string) (*Conn, error) {
-	return xdial(context.Background(), time.Duration(0), network, "", address)
-}
-
-func DialTimeout(network, address string, timeout time.Duration) (*Conn, error) {
-	return xdial(context.Background(), timeout, network, "", address)
-}
-
-func Dial2Ctx(ctx context.Context, network, la, address string) (*Conn, error) {
-	return xdial(ctx, time.Duration(0), network, la, address)
-}
-
-func Dial2(network, la, address string) (*Conn, error) {
-	return xdial(context.Background(), time.Duration(0), network, la, address)
-}
-
-func Dial2Timeout(network, la, address string, timeout time.Duration) (*Conn, error) {
-	return xdial(context.Background(), timeout, network, la, address)
+func Dial(network, address string) (net.Conn, error) {
+	return DialTimeout(network, address, 0)
 }

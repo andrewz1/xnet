@@ -1,64 +1,31 @@
 package xnet
 
 import (
-	"context"
 	"net"
-	"syscall"
 )
 
-func (r *rawConn) ctrlListen(network, address string, rc syscall.RawConn) (err error) {
-	var ok bool
-	if ok, err = r.ctrlBase(rc); err != nil {
-		return
+func Listen(network, address string) (net.Listener, error) {
+	switch network {
+	case "tcp", "tcp4", "tcp6":
+		la, err := net.ResolveTCPAddr(network, address)
+		if err != nil {
+			return nil, err
+		}
+		return ListenTCP(network, la)
+	default:
+		return nil, net.UnknownNetworkError(network)
 	}
-	if !ok {
-		return
-	}
-	if err = r.setReuse(); err != nil {
-		return
-	}
-	if err = r.setNoDelay(network); err != nil {
-		return
-	}
-	return
 }
 
-func ListenCtx(ctx context.Context, network, address string) (xl *Listener, err error) {
-	r := newRawConn()
-	lc := &net.ListenConfig{
-		Control: r.ctrlListen,
+func ListenPacket(network, address string) (net.PacketConn, error) {
+	switch network {
+	case "udp", "udp4", "udp6":
+		la, err := net.ResolveUDPAddr(network, address)
+		if err != nil {
+			return nil, err
+		}
+		return ListenUDP(network, la)
+	default:
+		return nil, net.UnknownNetworkError(network)
 	}
-	var nl net.Listener
-	if nl, err = lc.Listen(ctx, network, address); err != nil {
-		return
-	}
-	xl = &Listener{
-		Listener: nl,
-		fd:       r.fd,
-	}
-	return
-}
-
-func Listen(network, address string) (*Listener, error) {
-	return ListenCtx(context.Background(), network, address)
-}
-
-func ListenPacketCtx(ctx context.Context, network, address string) (xl *PacketConn, err error) {
-	r := newRawConn()
-	lc := &net.ListenConfig{
-		Control: r.ctrlListen,
-	}
-	var pl net.PacketConn
-	if pl, err = lc.ListenPacket(ctx, network, address); err != nil {
-		return
-	}
-	xl = &PacketConn{
-		PacketConn: pl,
-		fd:         r.fd,
-	}
-	return
-}
-
-func ListenPacket(network, address string) (*PacketConn, error) {
-	return ListenPacketCtx(context.Background(), network, address)
 }
