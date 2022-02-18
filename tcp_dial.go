@@ -6,14 +6,6 @@ import (
 	"time"
 )
 
-func tuneTCP(c *net.TCPConn) (*net.TCPConn, error) {
-	_ = c.SetLinger(5)
-	_ = c.SetKeepAlive(true)
-	_ = c.SetKeepAlivePeriod(10 * time.Second)
-	_ = c.SetNoDelay(true)
-	return c, nil
-}
-
 func fixTcpNet(network string) (string, error) {
 	switch network {
 	case "tcp", "tcp4", "tcp6":

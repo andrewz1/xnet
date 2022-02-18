@@ -6,11 +6,6 @@ import (
 	"time"
 )
 
-func tuneUDP(c *net.UDPConn) (*net.UDPConn, error) {
-	// todo
-	return c, nil
-}
-
 func fixUdpNet(network string) (string, error) {
 	switch network {
 	case "udp", "udp4", "udp6":
