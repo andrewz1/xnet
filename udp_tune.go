@@ -4,7 +4,7 @@ import (
 	"net"
 )
 
-func tuneUDP(c *net.UDPConn) (*net.UDPConn, error) {
+func tuneUDP(c *net.UDPConn) *net.UDPConn {
 	// todo
-	return c, nil
+	return c
 }

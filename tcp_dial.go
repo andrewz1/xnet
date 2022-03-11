@@ -27,7 +27,7 @@ func DialTCPContext(ctx context.Context, network string, laddr, raddr *net.TCPAd
 	if c, err = dl.DialContext(ctx, network, raddr.String()); err != nil {
 		return nil, err
 	}
-	return tuneTCP(c.(*net.TCPConn))
+	return tuneTCP(c.(*net.TCPConn)), nil
 }
 
 func DialTCPTimeout(network string, laddr, raddr *net.TCPAddr, tmo time.Duration) (*net.TCPConn, error) {
@@ -40,7 +40,7 @@ func DialTCPTimeout(network string, laddr, raddr *net.TCPAddr, tmo time.Duration
 	if c, err = dl.Dial(network, raddr.String()); err != nil {
 		return nil, err
 	}
-	return tuneTCP(c.(*net.TCPConn))
+	return tuneTCP(c.(*net.TCPConn)), nil
 }
 
 func DialTCP(network string, laddr, raddr *net.TCPAddr) (*net.TCPConn, error) {

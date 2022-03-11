@@ -22,7 +22,7 @@ func (l *TCPListener) AcceptTCP() (*net.TCPConn, error) {
 	if err != nil {
 		return nil, err
 	}
-	return tuneTCP(tc)
+	return tuneTCP(tc), nil
 }
 
 func (l *TCPListener) Accept() (net.Conn, error) {

@@ -27,7 +27,7 @@ func DialUDPContext(ctx context.Context, network string, laddr, raddr *net.UDPAd
 	if c, err = dl.DialContext(ctx, network, raddr.String()); err != nil {
 		return nil, err
 	}
-	return tuneUDP(c.(*net.UDPConn))
+	return tuneUDP(c.(*net.UDPConn)), nil
 }
 
 func DialUDPTimeout(network string, laddr, raddr *net.UDPAddr, tmo time.Duration) (*net.UDPConn, error) {
@@ -40,7 +40,7 @@ func DialUDPTimeout(network string, laddr, raddr *net.UDPAddr, tmo time.Duration
 	if c, err = dl.Dial(network, raddr.String()); err != nil {
 		return nil, err
 	}
-	return tuneUDP(c.(*net.UDPConn))
+	return tuneUDP(c.(*net.UDPConn)), nil
 }
 
 func DialUDP(network string, laddr, raddr *net.UDPAddr) (*net.UDPConn, error) {

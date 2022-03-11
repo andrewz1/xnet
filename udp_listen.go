@@ -9,5 +9,5 @@ func ListenUDP(network string, laddr *net.UDPAddr) (*net.UDPConn, error) {
 	if err != nil {
 		return nil, err
 	}
-	return tuneUDP(uc)
+	return tuneUDP(uc), nil
 }
