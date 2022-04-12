@@ -92,3 +92,17 @@ func MultiListen(network string, address ...string) (*MultiListener, error) {
 	}
 	return ml, nil
 }
+
+func AggregateListen(lns ...net.Listener) net.Listener {
+	if len(lns) == 0 {
+		return nil
+	}
+	ml := &MultiListener{
+		ln: append([]net.Listener{}, lns...),
+		ch: NewSafeChan(chanLen),
+	}
+	for _, l := range ml.ln {
+		go ml.acceptOne(l)
+	}
+	return ml
+}
