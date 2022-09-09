@@ -14,6 +14,7 @@ type ListenConfig struct {
 func NewListenConfig(ctx context.Context) *ListenConfig {
 	return &ListenConfig{
 		ListenConfig: net.ListenConfig{
+			Control:   Control,
 			KeepAlive: 10 * time.Second,
 		},
 		ctx: ctx,
